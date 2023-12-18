@@ -4,11 +4,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Collections;
 using Unity.Mathematics;
+using Unity.Burst;
+using Unity.Jobs;
 
 namespace SamsBackpack.BindedSkin
 {
     public class BindedSkin : MonoBehaviour
     {
+        private const int jobBatchSize = 32;
+
         [HideInInspector, SerializeField]
         public SkinnedMeshRenderer skin;
 
@@ -69,6 +73,7 @@ namespace SamsBackpack.BindedSkin
             BoneWeight[] meshWeights = skin.sharedMesh.boneWeights;
             List<BindingData> tempList = new List<BindingData>();
             int anchorStartKey = 0;
+            maxPointPerAnchor = 0;
             Matrix4x4 l2w = skin.transform.localToWorldMatrix;
 
             foreach (var anchor in anchors)
@@ -115,31 +120,20 @@ namespace SamsBackpack.BindedSkin
                 boneTransforms[i] = skin.bones[i].localToWorldMatrix;
             }
 
-            //Update bindedPoints
-            for (int i = 0; i < bindedPoint.Length; i++)
+
+            //Execute skinning via job
+            SkinBindingJob job = new SkinBindingJob()
             {
-                Vector3 position = bindedPoint[i].origin;
-                BoneWeight bw = bindedPoint[i].weights;
+                boneTransforms = boneTransforms,
+                boneOrigins = boneOrigins,
+                bindedPoint = bindedPoint,
+                transformedPoints = transformedPoints
+            };
+            job.Schedule(bindedPoint.Length, jobBatchSize).Complete();
 
-                Matrix4x4 delta0 = boneTransforms[bw.boneIndex0] * boneOrigins[bw.boneIndex0];
-                Vector3 p0 = delta0.MultiplyPoint(position) * bw.weight0;
-
-                Matrix4x4 delta1 = boneTransforms[bw.boneIndex1] * boneOrigins[bw.boneIndex1];
-                Vector3 p1 = delta1.MultiplyPoint(position) * bw.weight1;
-
-                Matrix4x4 delta2 = boneTransforms[bw.boneIndex2] * boneOrigins[bw.boneIndex2];
-                Vector3 p2 = delta2.MultiplyPoint(position) * bw.weight2;
-
-                Matrix4x4 delta3 = boneTransforms[bw.boneIndex3] * boneOrigins[bw.boneIndex3];
-                Vector3 p3 = delta3.MultiplyPoint(position) * bw.weight3;
-
-                Vector3 result = p0 + p1 + p2 + p3;
-                transformedPoints[i] = result;
-            }
-
-            float3[] anchorPositions = new float3[3];
 
             //Notify anchors
+            float3[] anchorPositions = new float3[maxPointPerAnchor];
             foreach (var anchor in anchors)
             {
                 (int id, int length) key = anchor.PointsKey;
@@ -167,5 +161,35 @@ namespace SamsBackpack.BindedSkin
             }
         }
 
+        [BurstCompile(CompileSynchronously = true)]
+        private struct SkinBindingJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<BindingData> bindedPoint;
+            [ReadOnly] public NativeArray<Matrix4x4> boneTransforms;
+            [ReadOnly] public NativeArray<Matrix4x4> boneOrigins;
+            [WriteOnly] public NativeArray<float3> transformedPoints;
+
+            //bindedPoint.Length
+            public void Execute(int i)
+            {
+                Vector3 position = bindedPoint[i].origin;
+                BoneWeight bw = bindedPoint[i].weights;
+
+                Matrix4x4 delta0 = boneTransforms[bw.boneIndex0] * boneOrigins[bw.boneIndex0];
+                Vector3 p0 = delta0.MultiplyPoint(position) * bw.weight0;
+
+                Matrix4x4 delta1 = boneTransforms[bw.boneIndex1] * boneOrigins[bw.boneIndex1];
+                Vector3 p1 = delta1.MultiplyPoint(position) * bw.weight1;
+
+                Matrix4x4 delta2 = boneTransforms[bw.boneIndex2] * boneOrigins[bw.boneIndex2];
+                Vector3 p2 = delta2.MultiplyPoint(position) * bw.weight2;
+
+                Matrix4x4 delta3 = boneTransforms[bw.boneIndex3] * boneOrigins[bw.boneIndex3];
+                Vector3 p3 = delta3.MultiplyPoint(position) * bw.weight3;
+
+                Vector3 result = p0 + p1 + p2 + p3;
+                transformedPoints[i] = result;
+            }
+        }
     }
 }
