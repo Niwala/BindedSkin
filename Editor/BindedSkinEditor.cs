@@ -102,7 +102,5 @@ namespace SamsBackpack.BindedSkin
         {
             bindedSkin.GoToBindPose();
         }
-
-
     }
 }

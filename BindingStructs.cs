@@ -1,36 +1,39 @@
-using System.Collections;
-using System.Collections.Generic;
-
 using UnityEngine;
 using Unity.Mathematics;
 
 namespace SamsBackpack.BindedSkin
 {
-    public struct BindingPoint
-    {
-        public float3 position;
-        public int skinPointreference;
-
-        public BindingPoint(float3 position, int skinPointreference)
-        {
-            this.position = position;
-            this.skinPointreference = skinPointreference;
-        }
-    }
-
-    public struct BindingData
+    public struct BindingPointInfo
     {
         public float3 origin;
         public BoneWeight weights;
-        public int anchorID;
-        public int pointID;
 
-        public BindingData(float3 origin, BoneWeight weights, int anchorID, int pointID)
+        public BindingPointInfo(float3 origin, BoneWeight weights)
         {
             this.origin = origin;
             this.weights = weights;
-            this.anchorID = anchorID;
-            this.pointID = pointID;
         }
+    }
+
+    public struct BindingTransformInfo
+    {
+        public SkinData skinData;
+        public SnapMethod snapMethod;
+
+        public int id;
+        public float3 barycentric;
+        public quaternion rotation;
+    }
+
+    public enum SkinData
+    {
+        Position,
+        PositionAndRotation
+    }
+
+    public enum SnapMethod
+    {
+        OnNearestVertex,
+        OnNearestTriangle,
     }
 }
