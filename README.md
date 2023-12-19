@@ -1,6 +1,13 @@
 # BindedSkin
  
-Relatively simple approach to bind gameObject (or juste positions & rotations) to an existing skin on Unity (CPU only, no mesh baking).
+Binds objects to a SkinnedMeshRenderer.
+ - Works only on the CPU side with Jobs + Burst.
+ - Does not use the BakeMesh() function and does not retrieve data from the GPU.<br>Simply copy the weight of bones onto vertices to apply the same transformation matrices to GameObjects.
+ - Can place objects on verteices or triangles using barycentric coordinates.
+ - Can control position and rotation.
+
+<br>
+
 The cubes on the leg in the gif are gameObjects with a classic meshRenderer.
 ![](Media/Unity_OQG2w7NDzh.gif)
 
@@ -14,11 +21,15 @@ Is relatively simple :
 
 ![](Media/Unity_EGm2rtF4Sy.png)
 
+- You can start the game, skininig is done in runtime.
+
 </br>
 
 <b>SkinData:</b>
   - Position: The object will be moved according to the skin
   - Position & rotation: The object will be moved and rotated according to the skin.
+
+<br>
 
 <b>Snap Method:</b>
   - On Nearest Vertex: The object will snap to the nearest vertex at the first frame.
@@ -27,4 +38,7 @@ Is relatively simple :
 </br>
 
 ## Optimisation
-I've added a little burst/job to the skinning function. That's as far as I went. The idea is mainly to make a proof of concept. So I didn't test to find more optimized values (like for the batch size), and there's probably a way of extending these optimizations further.
+ - Computations are performed on sync jobs. This allows relatively fast processing despite the large number of objects.
+
+## Dependancies
+ - This project requires Unity's Burst package.
