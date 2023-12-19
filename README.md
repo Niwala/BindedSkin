@@ -14,5 +14,17 @@ Is relatively simple :
 
 ![](Media/Unity_EGm2rtF4Sy.png)
 
+</br>
+
+<b>SkinData:</b>
+  - Position: The object will be moved according to the skin
+  - Position & rotation: The object will be moved and rotated according to the skin.
+
+<b>Snap Method:</b>
+  - On Nearest Vertex: The object will snap to the nearest vertex at the first frame.
+  - On Nearest Triangle: Object snapped to nearest triangle. Its coordinates will be maintained between the three points of the triangle using barycentric coordinates. The triangle can therefore be deformed.
+
+</br>
+
 ## Optimisation
 I've added a little burst/job to the skinning function. That's as far as I went. The idea is mainly to make a proof of concept. So I didn't test to find more optimized values (like for the batch size), and there's probably a way of extending these optimizations further.
